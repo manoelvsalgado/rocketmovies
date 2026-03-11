@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { FiMail, FiLock } from 'react-icons/fi';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
+import { ButtonText } from '../../components/ButtonText';
 import { useAuth } from '../../contexts/AuthContext';
 
 
 export function SignIn() {
-  const { signIn } = useAuth();
+  const { signIn, signInDemo } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -20,6 +21,10 @@ export function SignIn() {
     if (!result.success) {
       window.alert(result.message);
     }
+  }
+
+  function handleDemoAccess() {
+    signInDemo();
   }
 
   return (
@@ -48,6 +53,12 @@ export function SignIn() {
         />
 
         <Button title="Entrar" type="submit" />
+
+        <ButtonText
+          title="Entrar em modo demonstração"
+          onClick={handleDemoAccess}
+          style={{ textAlign: 'center' }}
+        />
         
         <Link to="/register">
           Criar conta

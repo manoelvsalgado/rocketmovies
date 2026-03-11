@@ -5,6 +5,13 @@ const AuthContext = createContext({});
 
 const STORAGE_KEY = '@rocketmovies:user';
 const DEFAULT_ROLE = 'user';
+const DEMO_USER = {
+  id: 'demo-user',
+  name: 'Visitante Demo',
+  email: 'demo@rocketmovies.app',
+  avatarUrl: buildAvatarUrl('Visitante Demo'),
+  role: 'user',
+};
 
 function readStoredUser() {
   const storedValue = localStorage.getItem(STORAGE_KEY);
@@ -76,6 +83,13 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   useEffect(() => {
+    const storedUser = readStoredUser();
+
+    if (storedUser?.id === DEMO_USER.id) {
+      setUser(storedUser);
+      return undefined;
+    }
+
     async function loadSession() {
       const {
         data: { session },
@@ -170,7 +184,17 @@ export function AuthProvider({ children }) {
     }
   }
 
+  function signInDemo() {
+    setUser(DEMO_USER);
+    return { success: true };
+  }
+
   async function signOut() {
+    if (user?.id === DEMO_USER.id) {
+      setUser(null);
+      return;
+    }
+
     await supabase.auth.signOut();
     setUser(null);
   }
@@ -226,6 +250,7 @@ export function AuthProvider({ children }) {
     user,
     users,
     signIn,
+    signInDemo,
     signOut,
     signUp,
     updateProfile,
