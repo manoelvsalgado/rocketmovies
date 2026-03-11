@@ -34,6 +34,8 @@ const seedUsers = [
   },
 ];
 
+const DEFAULT_ROLE = 'user';
+
 function readStorage(key, fallback) {
   const storedValue = localStorage.getItem(key);
 
@@ -43,12 +45,11 @@ function readStorage(key, fallback) {
 
   try {
     const parsed = JSON.parse(storedValue);
-    
-    // Se for array vazia ou null, retorna fallback
+
     if (Array.isArray(parsed) && parsed.length === 0) {
       return fallback;
     }
-    
+
     return parsed;
   } catch {
     return fallback;
@@ -76,9 +77,25 @@ function createUserId() {
   return `user-${Date.now()}`;
 }
 
+function normalizeEmail(email) {
+  return email.trim().toLowerCase();
+}
+
+function buildAvatarUrl(name) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`;
+}
+
 export function AuthProvider({ children }) {
   const [users, setUsers] = useState(() => readStorage(STORAGE_KEYS.users, seedUsers));
   const [user, setUser] = useState(() => readStorage(STORAGE_KEYS.user, null));
+
+  const findUserById = userId => users.find(existingUser => existingUser.id === userId);
+  const isEmailInUse = (email, ignoreUserId) =>
+    users.some(
+      existingUser =>
+        existingUser.id !== ignoreUserId &&
+        normalizeEmail(existingUser.email) === normalizeEmail(email),
+    );
 
   useEffect(() => {
     persistUsers(users);
@@ -89,12 +106,12 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   function signIn({ email, password }) {
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const normalizedPassword = password.trim();
-    
+
     const foundUser = users.find(
       existingUser =>
-        existingUser.email.toLowerCase() === normalizedEmail &&
+        normalizeEmail(existingUser.email) === normalizedEmail &&
         existingUser.password === normalizedPassword,
     );
 
@@ -113,10 +130,8 @@ export function AuthProvider({ children }) {
   }
 
   function signUp({ name, email, password }) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailAlreadyExists = users.some(
-      existingUser => existingUser.email.toLowerCase() === normalizedEmail,
-    );
+    const normalizedEmail = normalizeEmail(email);
+    const emailAlreadyExists = isEmailInUse(normalizedEmail);
 
     if (emailAlreadyExists) {
       return {
@@ -129,9 +144,9 @@ export function AuthProvider({ children }) {
       id: createUserId(),
       name: name.trim(),
       email: normalizedEmail,
-      password,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`,
-      role: 'user',
+      password: password.trim(),
+      avatarUrl: buildAvatarUrl(name),
+      role: DEFAULT_ROLE,
     };
 
     setUsers(previousUsers => [...previousUsers, newUser]);
@@ -154,12 +169,8 @@ export function AuthProvider({ children }) {
       };
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailAlreadyExists = users.some(
-      existingUser =>
-        existingUser.id !== user.id &&
-        existingUser.email.toLowerCase() === normalizedEmail,
-    );
+    const normalizedEmail = normalizeEmail(email);
+    const emailAlreadyExists = isEmailInUse(normalizedEmail, user.id);
 
     if (emailAlreadyExists) {
       return {
@@ -172,7 +183,7 @@ export function AuthProvider({ children }) {
       ...user,
       name: name.trim(),
       email: normalizedEmail,
-      password: password || user.password,
+      password: password?.trim() || user.password,
       avatarUrl: avatarUrl || user.avatarUrl,
     };
 
@@ -187,11 +198,10 @@ export function AuthProvider({ children }) {
       success: true,
     };
   }
-function createUser({ name, email, password, role = 'user' }) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailAlreadyExists = users.some(
-      existingUser => existingUser.email.toLowerCase() === normalizedEmail,
-    );
+
+  function createUser({ name, email, password, role = DEFAULT_ROLE }) {
+    const normalizedEmail = normalizeEmail(email);
+    const emailAlreadyExists = isEmailInUse(normalizedEmail);
 
     if (emailAlreadyExists) {
       return {
@@ -205,8 +215,8 @@ function createUser({ name, email, password, role = 'user' }) {
       id: createUserId(),
       name: name.trim(),
       email: normalizedEmail,
-      password,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`,
+      password: password.trim(),
+      avatarUrl: buildAvatarUrl(name),
       role,
     };
 
@@ -220,12 +230,17 @@ function createUser({ name, email, password, role = 'user' }) {
   }
 
   function updateUser(userId, { name, email, password, role }) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailAlreadyExists = users.some(
-      existingUser =>
-        existingUser.id !== userId &&
-        existingUser.email.toLowerCase() === normalizedEmail,
-    );
+    const currentUser = findUserById(userId);
+
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'Usuário não encontrado.',
+      };
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const emailAlreadyExists = isEmailInUse(normalizedEmail, userId);
 
     if (emailAlreadyExists) {
       return {
@@ -235,11 +250,11 @@ function createUser({ name, email, password, role = 'user' }) {
     }
 
     const updatedUser = {
-      ...users.find(u => u.id === userId),
+      ...currentUser,
       name: name.trim(),
       email: normalizedEmail,
-      password: password || users.find(u => u.id === userId).password,
-      role,
+      password: password?.trim() || currentUser.password,
+      role: role || currentUser.role,
     };
 
     setUsers(previousUsers =>
