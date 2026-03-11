@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
+import { adminUsersApi } from '../services/api';
 
 const AuthContext = createContext({});
 
@@ -55,8 +56,22 @@ function mapAuthUser(authUser) {
 }
 
 export function AuthProvider({ children }) {
-  const [users] = useState([]);
+  const [users, setUsers] = useState([]);
   const [user, setUser] = useState(readStoredUser);
+
+  const getAccessToken = useCallback(async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    return session?.access_token || null;
+  }, []);
+
+  const refreshUsers = useCallback(async () => {
+    const usersFromApi = await adminUsersApi.list(getAccessToken);
+    setUsers(usersFromApi);
+    return usersFromApi;
+  }, [getAccessToken]);
 
   useEffect(() => {
     persistCurrentUser(user);
@@ -83,6 +98,23 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    async function syncAdminUsers() {
+      if (!user || user.role !== 'admin') {
+        setUsers([]);
+        return;
+      }
+
+      try {
+        await refreshUsers();
+      } catch {
+        window.alert('Não foi possível carregar os usuários da API admin.');
+      }
+    }
+
+    syncAdminUsers();
+  }, [user, refreshUsers]);
 
   async function signIn({ email, password }) {
     try {
@@ -201,31 +233,90 @@ export function AuthProvider({ children }) {
   }
 
   async function createUser({ name, email, password, role = DEFAULT_ROLE }) {
-    return {
-      success: false,
-      message:
-        'Criação de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
-      user: null,
-      details: { name, email, password, role },
-    };
+    try {
+      const newUser = await adminUsersApi.create(
+        {
+          name: name.trim(),
+          email: normalizeEmail(email),
+          password: password.trim(),
+          role,
+          avatarUrl: buildAvatarUrl(name),
+        },
+        getAccessToken,
+      );
+
+      await refreshUsers();
+
+      return {
+        success: true,
+        message: 'Usuário criado com sucesso.',
+        user: newUser,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Falha ao criar usuário na API admin.',
+        user: null,
+      };
+    }
   }
 
   async function updateUser(userId, { name, email, password, role }) {
-    return {
-      success: false,
-      message:
-        'Edição de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
-      details: { userId, name, email, password, role },
-    };
+    try {
+      await adminUsersApi.update(
+        userId,
+        {
+          name: name.trim(),
+          email: normalizeEmail(email),
+          password: password?.trim() || undefined,
+          role,
+        },
+        getAccessToken,
+      );
+
+      await refreshUsers();
+
+      if (user?.id === userId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setUser(mapAuthUser(session?.user));
+      }
+
+      return {
+        success: true,
+        message: 'Usuário atualizado com sucesso.',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Falha ao atualizar usuário na API admin.',
+      };
+    }
   }
 
   async function deleteUser(userId) {
-    return {
-      success: false,
-      message:
-        'Exclusão de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
-      details: { userId },
-    };
+    if (user?.id === userId) {
+      return {
+        success: false,
+        message: 'Você não pode deletar sua própria conta aqui. Use as configurações de perfil.',
+      };
+    }
+
+    try {
+      await adminUsersApi.remove(userId, getAccessToken);
+      await refreshUsers();
+
+      return {
+        success: true,
+        message: 'Usuário deletado com sucesso.',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Falha ao deletar usuário na API admin.',
+      };
+    }
   }
 
   function isAdmin() {

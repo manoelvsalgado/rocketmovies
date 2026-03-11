@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import sqlite3 from 'sqlite3';
+import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -8,6 +9,13 @@ import { dirname, resolve } from 'node:path';
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 const DB_PATH = resolve(process.cwd(), 'server', 'data', 'rocketmovies.sqlite');
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
@@ -76,6 +84,72 @@ function toMoviePayload(movieRow) {
   };
 }
 
+function mapSupabaseUser(authUser) {
+  const name = authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário';
+
+  return {
+    id: authUser.id,
+    name,
+    email: authUser.email,
+    avatarUrl: authUser.user_metadata?.avatarUrl || '',
+    role: authUser.user_metadata?.role || 'user',
+    createdAt: authUser.created_at,
+  };
+}
+
+function getBearerToken(request) {
+  const authHeader = request.headers.authorization || '';
+
+  if (!authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  return authHeader.slice(7);
+}
+
+function ensureSupabaseConfig(response) {
+  if (supabaseAdmin) {
+    return true;
+  }
+
+  response.status(500).json({
+    message: 'Supabase não configurado no servidor. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
+  });
+
+  return false;
+}
+
+async function requireAdmin(request, response, next) {
+  if (!ensureSupabaseConfig(response)) {
+    return;
+  }
+
+  const token = getBearerToken(request);
+
+  if (!token) {
+    response.status(401).json({ message: 'Token de autenticação não informado.' });
+    return;
+  }
+
+  const {
+    data: { user },
+    error,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (error || !user) {
+    response.status(401).json({ message: 'Token inválido.' });
+    return;
+  }
+
+  if (user.user_metadata?.role !== 'admin') {
+    response.status(403).json({ message: 'Acesso restrito a administradores.' });
+    return;
+  }
+
+  request.currentUser = user;
+  next();
+}
+
 async function ensureSchema() {
   await run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -106,6 +180,103 @@ app.use(express.json());
 
 app.get('/health', (_, response) => {
   response.json({ status: 'ok' });
+});
+
+app.get('/admin/users', requireAdmin, async (_, response) => {
+  const {
+    data: { users },
+    error,
+  } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+  if (error) {
+    response.status(500).json({ message: 'Falha ao listar usuários do Supabase.' });
+    return;
+  }
+
+  response.json(users.map(mapSupabaseUser));
+});
+
+app.post('/admin/users', requireAdmin, async (request, response) => {
+  const { name, email, password, role = 'user', avatarUrl = '' } = request.body;
+
+  if (!name?.trim() || !email?.trim() || !password?.trim()) {
+    response.status(400).json({ message: 'Nome, e-mail e senha são obrigatórios.' });
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email: email.trim().toLowerCase(),
+    password: password.trim(),
+    email_confirm: true,
+    user_metadata: {
+      name: name.trim(),
+      role,
+      avatarUrl,
+    },
+  });
+
+  if (error || !data.user) {
+    response.status(400).json({ message: error?.message || 'Falha ao criar usuário.' });
+    return;
+  }
+
+  response.status(201).json(mapSupabaseUser(data.user));
+});
+
+app.patch('/admin/users/:id', requireAdmin, async (request, response) => {
+  const { id } = request.params;
+  const { name, email, password, role, avatarUrl } = request.body;
+
+  const {
+    data: { user: existingUser },
+    error: existingError,
+  } = await supabaseAdmin.auth.admin.getUserById(id);
+
+  if (existingError || !existingUser) {
+    response.status(404).json({ message: 'Usuário não encontrado.' });
+    return;
+  }
+
+  const payload = {
+    email: email?.trim().toLowerCase() || existingUser.email,
+    user_metadata: {
+      ...existingUser.user_metadata,
+      name: name?.trim() || existingUser.user_metadata?.name,
+      role: role || existingUser.user_metadata?.role || 'user',
+      avatarUrl: avatarUrl ?? existingUser.user_metadata?.avatarUrl ?? '',
+    },
+  };
+
+  if (password?.trim()) {
+    payload.password = password.trim();
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, payload);
+
+  if (error || !data.user) {
+    response.status(400).json({ message: error?.message || 'Falha ao atualizar usuário.' });
+    return;
+  }
+
+  response.json(mapSupabaseUser(data.user));
+});
+
+app.delete('/admin/users/:id', requireAdmin, async (request, response) => {
+  const { id } = request.params;
+
+  if (request.currentUser?.id === id) {
+    response.status(400).json({ message: 'Você não pode deletar sua própria conta.' });
+    return;
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+  if (error) {
+    response.status(400).json({ message: error.message || 'Falha ao remover usuário.' });
+    return;
+  }
+
+  response.status(204).send();
 });
 
 app.get('/users', async (_, response) => {
