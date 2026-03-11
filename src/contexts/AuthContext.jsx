@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, profilesDb, emailDb } from '../services/supabase';
+import { supabase, profilesDb } from '../services/supabase';
 
 const AuthContext = createContext({});
 
@@ -161,15 +161,6 @@ export function AuthProvider({ children }) {
           avatarUrl: buildAvatarUrl(trimmedName),
           role: DEFAULT_ROLE,
         });
-      }
-
-      try {
-        await emailDb.sendWelcomeEmail({
-          name: trimmedName,
-          toEmail: normalizedEmail,
-        });
-      } catch {
-        console.warn('Não foi possível enviar o e-mail de boas-vindas.');
       }
 
       setUser(await hydrateUser(data.user));
