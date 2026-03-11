@@ -9,8 +9,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export function SignIn() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('manoel@example.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -24,7 +24,7 @@ export function SignIn() {
 
   return (
     <Container>
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} autoComplete="off">
         <small>Bem-vindo de volta</small>
         <h1>RocketMovies</h1>
         <p>Aplicação para acompanhar, avaliar e organizar os filmes que você assistiu.</p>
@@ -33,6 +33,7 @@ export function SignIn() {
           placeholder="E-mail"
           type="text"
           icon={FiMail}
+          autoComplete="off"
           value={email}
           onChange={event => setEmail(event.target.value)}
         />
@@ -41,6 +42,7 @@ export function SignIn() {
           placeholder="Senha"
           type="password"
           icon={FiLock}
+          autoComplete="new-password"
           value={password}
           onChange={event => setPassword(event.target.value)}
         />

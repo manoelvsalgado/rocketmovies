@@ -31,7 +31,7 @@ export function SignUp() {
   return (
     <Container>
       <Background />
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} autoComplete="off">
         <small>Novo por aqui?</small>
         <h1>RocketMovies</h1>
         <p>Crie sua conta para registrar filmes, avaliações e marcadores favoritos.</p>
@@ -41,6 +41,7 @@ export function SignUp() {
         placeholder="Nome"
         type="text"
         icon={FiUser}
+        autoComplete="off"
         value={name}
         onChange={event => setName(event.target.value)}
       />
@@ -49,6 +50,7 @@ export function SignUp() {
         placeholder="E-mail"
         type="text"
         icon={FiMail}
+        autoComplete="off"
         value={email}
         onChange={event => setEmail(event.target.value)}
       />
@@ -57,6 +59,7 @@ export function SignUp() {
         placeholder="Senha"
         type="password"
         icon={FiLock}
+        autoComplete="new-password"
         value={password}
         onChange={event => setPassword(event.target.value)}
       />
