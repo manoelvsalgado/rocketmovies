@@ -25,18 +25,5 @@
       "role": "user"
     }
   ],
-  "movies": [
-    {
-      "id": "movie-1",
-      "title": "Três Homens em Conflito",
-      "rating": 5,
-      "description": "Durante a Guerra Civil Americana, três pistoleiros disputam uma fortuna escondida enquanto cruzam um oeste brutal e inesquecível.",
-      "tags": [
-        "Faroeste",
-        "Clint Eastwood",
-        "Sergio Leone"
-      ],
-      "createdAt": "2026-03-10T12:00:00.000Z"
-    }
-  ]
+  "movies": []
 }
