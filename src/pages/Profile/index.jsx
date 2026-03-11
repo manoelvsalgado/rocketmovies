@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Container, Form, Avatar } from "./styles";
-import { FiArrowLeft, FiUser, FiMail, FiLock, FiCamera } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiMail, FiLock, FiLink } from "react-icons/fi";
 import { Input } from "../../components/Input";
 import { Button } from "../../components/Button";
 import { Link } from 'react-router-dom';
@@ -13,6 +13,7 @@ export function Profile() {
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -22,6 +23,7 @@ export function Profile() {
     const result = await updateProfile({
       name,
       email,
+      avatarUrl,
       password: newPassword || password,
     });
 
@@ -50,19 +52,18 @@ export function Profile() {
 
         <Avatar>
           <img 
-          src={user?.avatarUrl}
+          src={avatarUrl || 'https://placehold.co/152x152?text=User'}
           alt="Foto do usuário" 
           />
-
-          <label htmlFor="avatar">
-           <FiCamera /> 
-
-           <input 
-            id="avatar"
-            type="file"
-           />
-          </label>
         </Avatar>
+
+        <Input
+          placeholder="URL da foto de perfil"
+          type="url"
+          icon={FiLink}
+          value={avatarUrl}
+          onChange={event => setAvatarUrl(event.target.value)}
+        />
         <Input 
           placeholder="Nome"
           type="text"

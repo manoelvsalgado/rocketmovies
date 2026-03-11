@@ -89,32 +89,5 @@ export const Avatar = styled.div`
     border: 4px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
   }
 
-  > label {
-    width: 44px;
-    height: 44px;
-    background-color: ${({ theme }) => theme.COLORS.ORANGE};
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    cursor: pointer;
-    transition: filter 0.2s;
 
-    &:hover {
-      filter: brightness(0.9);
-    }
-
-    input {
-      display: none;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-      color: ${({ theme }) => theme.COLORS.BACKGROUND_800};
-    }
-  }
 `;
