@@ -14,6 +14,23 @@ const seedUsers = [
     email: 'manoel@example.com',
     password: '123456',
     avatarUrl: 'https://github.com/manoelvsalgado.png',
+    role: 'admin',
+  },
+  {
+    id: 'user-2',
+    name: 'João Silva',
+    email: 'joao@example.com',
+    password: '123456',
+    avatarUrl: 'https://ui-avatars.com/api/?name=Jo%C3%A3o%20Silva&background=FF859B&color=232129',
+    role: 'user',
+  },
+  {
+    id: 'user-3',
+    name: 'Maria Santos',
+    email: 'maria@example.com',
+    password: '123456',
+    avatarUrl: 'https://ui-avatars.com/api/?name=Maria%20Santos&background=FF859B&color=232129',
+    role: 'user',
   },
 ];
 
@@ -105,6 +122,7 @@ export function AuthProvider({ children }) {
       email: normalizedEmail,
       password,
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`,
+      role: 'user',
     };
 
     setUsers(previousUsers => [...previousUsers, newUser]);
@@ -160,6 +178,96 @@ export function AuthProvider({ children }) {
       success: true,
     };
   }
+function createUser({ name, email, password, role = 'user' }) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailAlreadyExists = users.some(
+      existingUser => existingUser.email.toLowerCase() === normalizedEmail,
+    );
+
+    if (emailAlreadyExists) {
+      return {
+        success: false,
+        message: 'Já existe um usuário com este e-mail.',
+        user: null,
+      };
+    }
+
+    const newUser = {
+      id: createUserId(),
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`,
+      role,
+    };
+
+    setUsers(previousUsers => [...previousUsers, newUser]);
+
+    return {
+      success: true,
+      message: 'Usuário criado com sucesso.',
+      user: newUser,
+    };
+  }
+
+  function updateUser(userId, { name, email, password, role }) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailAlreadyExists = users.some(
+      existingUser =>
+        existingUser.id !== userId &&
+        existingUser.email.toLowerCase() === normalizedEmail,
+    );
+
+    if (emailAlreadyExists) {
+      return {
+        success: false,
+        message: 'Este e-mail já está em uso.',
+      };
+    }
+
+    const updatedUser = {
+      ...users.find(u => u.id === userId),
+      name: name.trim(),
+      email: normalizedEmail,
+      password: password || users.find(u => u.id === userId).password,
+      role,
+    };
+
+    setUsers(previousUsers =>
+      previousUsers.map(existingUser =>
+        existingUser.id === userId ? updatedUser : existingUser,
+      ),
+    );
+
+    if (user?.id === userId) {
+      setUser(updatedUser);
+    }
+
+    return {
+      success: true,
+      message: 'Usuário atualizado com sucesso.',
+    };
+  }
+
+  function deleteUser(userId) {
+    if (user?.id === userId) {
+      return {
+        success: false,
+        message: 'Você não pode deletar sua própria conta aqui. Use as configurações de perfil.',
+      };
+    }
+
+    setUsers(previousUsers => previousUsers.filter(u => u.id !== userId));
+
+    return {
+      success: true,
+      message: 'Usuário deletado com sucesso.',
+    };
+  }
+
+  function isAdmin() {
+    return user?.role === 'admin';
+  }
 
   const value = useMemo(
     () => ({
@@ -169,6 +277,10 @@ export function AuthProvider({ children }) {
       signOut,
       signUp,
       updateProfile,
+      createUser,
+      updateUser,
+      deleteUser,
+      isAdmin,
     }),
     [user, users],
   );

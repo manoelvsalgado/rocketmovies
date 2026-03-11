@@ -28,6 +28,29 @@ export const Container = styled.header`
     flex: 1;
     max-width: 630px;
   }
+
+  .admin-btn {
+    background: none;
+    border: none;
+    color: ${({ theme }) => theme.COLORS.PINK};
+    cursor: pointer;
+    font-size: 24px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:hover {
+      background-color: rgba(255, 133, 155, 0.1);
+    }
+  }
 `;
 
 export const Profile = styled(Link)`
@@ -59,6 +82,7 @@ align-items: center;
     color: ${({ theme }) => theme.COLORS.GRAY_100};
     font-size: 14px;
   }
+ }
 `;
 
 export const Logout = styled.button`
