@@ -38,6 +38,19 @@ export function MoviesProvider({ children }) {
     return newMovie;
   }
 
+  async function updateMovie(id, { title, description, rating, tags }) {
+    const updatedMovie = await moviesApi.update(id, {
+      title: title.trim(),
+      description: description.trim(),
+      rating: Number(rating),
+      tags: tags.filter(Boolean),
+    });
+
+    await refreshMovies();
+
+    return updatedMovie;
+  }
+
   async function deleteMovie(id) {
     await moviesApi.remove(id);
     await refreshMovies();
@@ -51,6 +64,7 @@ export function MoviesProvider({ children }) {
     () => ({
       movies,
       createMovie,
+      updateMovie,
       deleteMovie,
       getMovieById,
     }),

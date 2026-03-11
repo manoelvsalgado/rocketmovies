@@ -14,8 +14,11 @@
       "id": "36b8",
       "title": "Busca",
       "description": "Buscar",
-      "rating": 4,
-      "tags": [],
+      "rating": 3,
+      "tags": [
+        "nova",
+        "nova tag"
+      ],
       "createdAt": "2026-03-11T14:02:48.095Z"
     }
   ]

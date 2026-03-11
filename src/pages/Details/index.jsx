@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { FiClock, FiStar } from 'react-icons/fi';
 import { Container, Links, Content } from './styles';
 import { Header } from '../../components/Header';
@@ -74,7 +74,10 @@ export function Details() {
         <Content>
           <div className="actions">
             <Button title="Voltar" onClick={() => navigate(-1)} />
-            <ButtonText title="Excluir filme" onClick={handleDeleteMovie} />
+            <div className="actions-right">
+              <Link to={`/edit/${movie.id}`} className="edit-link">Editar filme</Link>
+              <ButtonText title="Excluir filme" onClick={handleDeleteMovie} />
+            </div>
           </div>
 
           <h1>{movie.title}</h1>

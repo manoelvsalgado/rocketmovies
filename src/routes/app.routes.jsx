@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { New } from '../pages/New';
+import { Edit } from '../pages/Edit';
 import { Home } from '../pages/Home';
 import { Profile } from '../pages/Profile';
 import { Details } from '../pages/Details';
@@ -11,6 +12,7 @@ export function AppRoutes(){
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/new" element={<New />} />
+      <Route path="/edit/:id" element={<Edit />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/details/:id" element={<Details />} />
       <Route path="/users" element={<Users />} />

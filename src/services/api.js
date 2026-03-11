@@ -30,5 +30,6 @@ export const usersApi = {
 export const moviesApi = {
   list: () => request('/movies'),
   create: payload => request('/movies', { method: 'POST', body: JSON.stringify(payload) }),
+  update: (id, payload) => request(`/movies/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   remove: id => request(`/movies/${id}`, { method: 'DELETE' }),
 };

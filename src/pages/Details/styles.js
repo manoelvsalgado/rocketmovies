@@ -52,6 +52,23 @@ export const Content = styled.div`
       margin-top: 0;
       padding: 0 20px;
     }
+
+    > .actions-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+
+      .edit-link {
+        color: ${({ theme }) => theme.COLORS.PINK};
+        font-size: 15px;
+        font-weight: 600;
+        transition: filter 0.2s;
+
+        &:hover {
+          filter: brightness(1.15);
+        }
+      }
+    }
   }
 
   > h1 {
@@ -97,6 +114,10 @@ export const Content = styled.div`
 
       > button:first-child {
         width: 100%;
+      }
+
+      > .actions-right {
+        justify-content: space-between;
       }
     }
   }
