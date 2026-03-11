@@ -12,9 +12,21 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-anon-key',
 );
 
+function mapProfile(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    avatarUrl: row.avatar_url,
+    role: row.role,
+    createdAt: row.created_at,
+  };
+}
+
 function mapMovie(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     title: row.title,
     rating: Number(row.rating),
     description: row.description,
@@ -68,6 +80,17 @@ export const moviesDb = {
 };
 
 export const profilesDb = {
+  async getById(id) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) sdThrow(error);
+    return data ? mapProfile(data) : null;
+  },
+
   async list() {
     const { data, error } = await supabase
       .from('profiles')
@@ -75,14 +98,7 @@ export const profilesDb = {
       .order('created_at', { ascending: false });
 
     if (error) sdThrow(error);
-    return data.map(row => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      avatarUrl: row.avatar_url,
-      role: row.role,
-      createdAt: row.created_at,
-    }));
+    return data.map(mapProfile);
   },
 
   async upsert({ id, name, email, avatarUrl, role }) {
@@ -90,6 +106,15 @@ export const profilesDb = {
       { id, name, email, avatar_url: avatarUrl, role },
       { onConflict: 'id' },
     );
+
+    if (error) sdThrow(error);
+  },
+
+  async update(id, { name, email, avatarUrl }) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ name, email, avatar_url: avatarUrl })
+      .eq('id', id);
 
     if (error) sdThrow(error);
   },

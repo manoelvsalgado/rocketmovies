@@ -37,26 +37,39 @@ function buildAvatarUrl(name) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`;
 }
 
-function mapAuthUser(authUser) {
+function mapAuthUser(authUser, profile = null) {
   if (!authUser) {
     return null;
   }
 
-  const name = authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário';
-  const avatarUrl = authUser.user_metadata?.avatarUrl || buildAvatarUrl(name);
+  const fallbackName = authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário';
+  const fallbackAvatarUrl = authUser.user_metadata?.avatarUrl || buildAvatarUrl(fallbackName);
 
   return {
     id: authUser.id,
-    name,
-    email: authUser.email,
-    avatarUrl,
-    role: authUser.user_metadata?.role || DEFAULT_ROLE,
+    name: profile?.name || fallbackName,
+    email: profile?.email || authUser.email,
+    avatarUrl: profile?.avatarUrl || fallbackAvatarUrl,
+    role: profile?.role || DEFAULT_ROLE,
   };
 }
 
 export function AuthProvider({ children }) {
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState(readStoredUser);
+
+  async function hydrateUser(authUser) {
+    if (!authUser) {
+      return null;
+    }
+
+    try {
+      const profile = await profilesDb.getById(authUser.id);
+      return mapAuthUser(authUser, profile);
+    } catch {
+      return mapAuthUser(authUser);
+    }
+  }
 
   useEffect(() => {
     persistCurrentUser(user);
@@ -68,7 +81,7 @@ export function AuthProvider({ children }) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      setUser(mapAuthUser(session?.user) || null);
+      setUser(await hydrateUser(session?.user));
     }
 
     loadSession();
@@ -76,7 +89,7 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(mapAuthUser(session?.user) || null);
+      hydrateUser(session?.user).then(setUser);
     });
 
     return () => {
@@ -113,7 +126,7 @@ export function AuthProvider({ children }) {
         return { success: false, message: 'E-mail ou senha inválidos.' };
       }
 
-      setUser(mapAuthUser(data.user));
+      setUser(await hydrateUser(data.user));
       return { success: true };
     } catch {
       return { success: false, message: 'Falha ao acessar a autenticação.' };
@@ -130,7 +143,6 @@ export function AuthProvider({ children }) {
           data: {
             name: trimmedName,
             avatarUrl: buildAvatarUrl(trimmedName),
-            role: DEFAULT_ROLE,
           },
         },
       });
@@ -149,7 +161,7 @@ export function AuthProvider({ children }) {
         });
       }
 
-      setUser(mapAuthUser(data.user));
+      setUser(await hydrateUser(data.user));
       return { success: true };
     } catch {
       return { success: false, message: 'Falha ao criar conta.' };
@@ -174,7 +186,6 @@ export function AuthProvider({ children }) {
         data: {
           name: trimmedName,
           avatarUrl: nextAvatarUrl,
-          role: user.role || DEFAULT_ROLE,
         },
       };
 
@@ -192,17 +203,13 @@ export function AuthProvider({ children }) {
         return { success: false, message: error.message };
       }
 
-      const updatedUser = mapAuthUser(data.user);
-      setUser(updatedUser);
-
-      await profilesDb.upsert({
-        id: updatedUser.id,
+      await profilesDb.update(user.id, {
         name: trimmedName,
-        email: updatedUser.email,
+        email: payload.email || user.email,
         avatarUrl: nextAvatarUrl,
-        role: updatedUser.role,
       });
 
+      setUser(await hydrateUser(data.user));
       return { success: true };
     } catch {
       return { success: false, message: 'Falha ao atualizar perfil.' };
