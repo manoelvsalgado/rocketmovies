@@ -16,10 +16,10 @@ export function Profile() {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    const result = updateProfile({
+    const result = await updateProfile({
       name,
       email,
       password: newPassword || password,

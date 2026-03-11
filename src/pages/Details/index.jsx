@@ -30,7 +30,7 @@ export function Details() {
     }).format(new Date(movie.createdAt));
   }, [movie]);
 
-  function handleDeleteMovie() {
+  async function handleDeleteMovie() {
     if (!movie) {
       navigate('/');
       return;
@@ -42,8 +42,12 @@ export function Details() {
       return;
     }
 
-    deleteMovie(movie.id);
-    navigate('/');
+    try {
+      await deleteMovie(movie.id);
+      navigate('/');
+    } catch {
+      window.alert('Falha ao excluir filme na API.');
+    }
   }
 
   if (!movie) {

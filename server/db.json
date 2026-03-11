@@ -1,0 +1,42 @@
+{
+  "users": [
+    {
+      "id": "user-1",
+      "name": "Manoel Salgado",
+      "email": "manoel@example.com",
+      "password": "123456",
+      "avatarUrl": "https://github.com/manoelvsalgado.png",
+      "role": "admin"
+    },
+    {
+      "id": "user-2",
+      "name": "João Silva",
+      "email": "joao@example.com",
+      "password": "123456",
+      "avatarUrl": "https://ui-avatars.com/api/?name=Jo%C3%A3o%20Silva&background=FF859B&color=232129",
+      "role": "user"
+    },
+    {
+      "id": "user-3",
+      "name": "Maria Santos",
+      "email": "maria@example.com",
+      "password": "123456",
+      "avatarUrl": "https://ui-avatars.com/api/?name=Maria%20Santos&background=FF859B&color=232129",
+      "role": "user"
+    }
+  ],
+  "movies": [
+    {
+      "id": "movie-1",
+      "title": "Três Homens em Conflito",
+      "rating": 5,
+      "description": "Durante a Guerra Civil Americana, três pistoleiros disputam uma fortuna escondida enquanto cruzam um oeste brutal e inesquecível.",
+      "tags": [
+        "Faroeste",
+        "Clint Eastwood",
+        "Sergio Leone"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z"
+    }
+  ]
+}

@@ -41,7 +41,7 @@ export function New() {
     setTags(previousTags => previousTags.filter(tag => tag !== tagToRemove));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!title.trim() || !description.trim() || !rating) {
@@ -61,14 +61,18 @@ export function New() {
       return;
     }
 
-    const movie = createMovie({
-      title,
-      rating: numericRating,
-      description,
-      tags,
-    });
+    try {
+      const movie = await createMovie({
+        title,
+        rating: numericRating,
+        description,
+        tags,
+      });
 
-    navigate(`/details/${movie.id}`);
+      navigate(`/details/${movie.id}`);
+    } catch {
+      window.alert('Falha ao salvar filme na API.');
+    }
   }
 
   return (

@@ -1,67 +1,46 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { moviesApi } from '../services/api';
 
 const MoviesContext = createContext({});
 
-const STORAGE_KEY = '@rocketmovies:movies';
-
-const seedMovies = [
-  {
-    id: 'movie-1',
-    title: 'Três Homens em Conflito',
-    rating: 5,
-    description:
-      'Durante a Guerra Civil Americana, três pistoleiros disputam uma fortuna escondida enquanto cruzam um oeste brutal e inesquecível.',
-    tags: ['Faroeste', 'Clint Eastwood', 'Sergio Leone'],
-    createdAt: '2026-03-10T12:00:00.000Z',
-  },
-];
-
-function readStorage() {
-  const storedValue = localStorage.getItem(STORAGE_KEY);
-
-  if (!storedValue) {
-    return seedMovies;
-  }
-
-  try {
-    return JSON.parse(storedValue);
-  } catch {
-    return seedMovies;
-  }
-}
-
-function createMovieId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-
-  return `movie-${Date.now()}`;
-}
-
 export function MoviesProvider({ children }) {
-  const [movies, setMovies] = useState(readStorage);
+  const [movies, setMovies] = useState([]);
+
+  async function refreshMovies() {
+    const moviesFromApi = await moviesApi.list();
+    setMovies(moviesFromApi);
+    return moviesFromApi;
+  }
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(movies));
-  }, [movies]);
+    async function loadMovies() {
+      try {
+        await refreshMovies();
+      } catch {
+        window.alert('Não foi possível carregar os filmes da API.');
+      }
+    }
 
-  function createMovie({ title, description, rating, tags }) {
-    const newMovie = {
-      id: createMovieId(),
+    loadMovies();
+  }, []);
+
+  async function createMovie({ title, description, rating, tags }) {
+    const newMovie = await moviesApi.create({
       title: title.trim(),
       description: description.trim(),
       rating: Number(rating),
       tags: tags.filter(Boolean),
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    setMovies(previousMovies => [newMovie, ...previousMovies]);
+    await refreshMovies();
 
     return newMovie;
   }
 
-  function deleteMovie(id) {
-    setMovies(previousMovies => previousMovies.filter(movie => movie.id !== id));
+  async function deleteMovie(id) {
+    await moviesApi.remove(id);
+    await refreshMovies();
   }
 
   function getMovieById(id) {

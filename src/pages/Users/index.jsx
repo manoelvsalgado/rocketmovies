@@ -38,13 +38,13 @@ export function Users() {
     setIsModalOpen(true);
   }
 
-  function handleDelete(userId, userName) {
+  async function handleDelete(userId, userName) {
     const confirmed = window.confirm(
       `Tem certeza que deseja deletar o usuário "${userName}"?`,
     );
 
     if (confirmed) {
-      const result = deleteUser(userId);
+      const result = await deleteUser(userId);
       window.alert(result.message);
     }
   }

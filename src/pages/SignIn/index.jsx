@@ -12,10 +12,10 @@ export function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    const result = signIn({ email, password });
+    const result = await signIn({ email, password });
 
     if (!result.success) {
       window.alert(result.message);

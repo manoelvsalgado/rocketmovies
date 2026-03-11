@@ -1,80 +1,32 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { usersApi } from '../services/api';
 
 const AuthContext = createContext({});
 
-const STORAGE_KEYS = {
-  users: '@rocketmovies:users',
-  user: '@rocketmovies:user',
-};
-
-const seedUsers = [
-  {
-    id: 'user-1',
-    name: 'Manoel Salgado',
-    email: 'manoel@example.com',
-    password: '123456',
-    avatarUrl: 'https://github.com/manoelvsalgado.png',
-    role: 'admin',
-  },
-  {
-    id: 'user-2',
-    name: 'João Silva',
-    email: 'joao@example.com',
-    password: '123456',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Jo%C3%A3o%20Silva&background=FF859B&color=232129',
-    role: 'user',
-  },
-  {
-    id: 'user-3',
-    name: 'Maria Santos',
-    email: 'maria@example.com',
-    password: '123456',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Maria%20Santos&background=FF859B&color=232129',
-    role: 'user',
-  },
-];
-
+const STORAGE_KEY = '@rocketmovies:user';
 const DEFAULT_ROLE = 'user';
 
-function readStorage(key, fallback) {
-  const storedValue = localStorage.getItem(key);
+function readStoredUser() {
+  const storedValue = localStorage.getItem(STORAGE_KEY);
 
   if (!storedValue) {
-    return fallback;
+    return null;
   }
 
   try {
-    const parsed = JSON.parse(storedValue);
-
-    if (Array.isArray(parsed) && parsed.length === 0) {
-      return fallback;
-    }
-
-    return parsed;
+    return JSON.parse(storedValue);
   } catch {
-    return fallback;
+    return null;
   }
-}
-
-function persistUsers(users) {
-  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
 }
 
 function persistCurrentUser(user) {
   if (!user) {
-    localStorage.removeItem(STORAGE_KEYS.user);
+    localStorage.removeItem(STORAGE_KEY);
     return;
   }
 
-  localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-}
-
-function createUserId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-
-  return `user-${Date.now()}`;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 }
 
 function normalizeEmail(email) {
@@ -86,82 +38,112 @@ function buildAvatarUrl(name) {
 }
 
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState(() => readStorage(STORAGE_KEYS.users, seedUsers));
-  const [user, setUser] = useState(() => readStorage(STORAGE_KEYS.user, null));
-
-  const findUserById = userId => users.find(existingUser => existingUser.id === userId);
-  const isEmailInUse = (email, ignoreUserId) =>
-    users.some(
-      existingUser =>
-        existingUser.id !== ignoreUserId &&
-        normalizeEmail(existingUser.email) === normalizeEmail(email),
-    );
-
-  useEffect(() => {
-    persistUsers(users);
-  }, [users]);
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState(readStoredUser);
 
   useEffect(() => {
     persistCurrentUser(user);
   }, [user]);
 
-  function signIn({ email, password }) {
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedPassword = password.trim();
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        const usersFromApi = await usersApi.list();
+        setUsers(usersFromApi);
 
-    const foundUser = users.find(
-      existingUser =>
-        normalizeEmail(existingUser.email) === normalizedEmail &&
-        existingUser.password === normalizedPassword,
-    );
-
-    if (!foundUser) {
-      return {
-        success: false,
-        message: 'E-mail ou senha inválidos.',
-      };
+        if (user) {
+          const refreshedCurrentUser = usersFromApi.find(existingUser => existingUser.id === user.id);
+          setUser(refreshedCurrentUser || null);
+        }
+      } catch {
+        window.alert('Não foi possível carregar os usuários da API.');
+      }
     }
 
-    setUser(foundUser);
+    loadUsers();
+  }, []);
 
-    return {
-      success: true,
-    };
+  async function refreshUsers() {
+    const usersFromApi = await usersApi.list();
+    setUsers(usersFromApi);
+    return usersFromApi;
   }
 
-  function signUp({ name, email, password }) {
-    const normalizedEmail = normalizeEmail(email);
-    const emailAlreadyExists = isEmailInUse(normalizedEmail);
+  async function signIn({ email, password }) {
+    try {
+      const usersFromApi = await refreshUsers();
+      const normalizedEmail = normalizeEmail(email);
+      const normalizedPassword = password.trim();
 
-    if (emailAlreadyExists) {
+      const foundUser = usersFromApi.find(
+        existingUser =>
+          normalizeEmail(existingUser.email) === normalizedEmail &&
+          existingUser.password === normalizedPassword,
+      );
+
+      if (!foundUser) {
+        return {
+          success: false,
+          message: 'E-mail ou senha inválidos.',
+        };
+      }
+
+      setUser(foundUser);
+
+      return {
+        success: true,
+      };
+    } catch {
       return {
         success: false,
-        message: 'Já existe uma conta com este e-mail.',
+        message: 'Falha ao acessar a API de autenticação.',
       };
     }
+  }
 
-    const newUser = {
-      id: createUserId(),
-      name: name.trim(),
-      email: normalizedEmail,
-      password: password.trim(),
-      avatarUrl: buildAvatarUrl(name),
-      role: DEFAULT_ROLE,
-    };
+  async function signUp({ name, email, password }) {
+    try {
+      const usersFromApi = await refreshUsers();
+      const normalizedEmail = normalizeEmail(email);
 
-    setUsers(previousUsers => [...previousUsers, newUser]);
-    setUser(newUser);
+      const emailAlreadyExists = usersFromApi.some(
+        existingUser => normalizeEmail(existingUser.email) === normalizedEmail,
+      );
 
-    return {
-      success: true,
-    };
+      if (emailAlreadyExists) {
+        return {
+          success: false,
+          message: 'Já existe uma conta com este e-mail.',
+        };
+      }
+
+      const newUser = await usersApi.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        password: password.trim(),
+        avatarUrl: buildAvatarUrl(name),
+        role: DEFAULT_ROLE,
+      });
+
+      await refreshUsers();
+      setUser(newUser);
+
+      return {
+        success: true,
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Falha ao criar conta na API.',
+      };
+    }
   }
 
   function signOut() {
     setUser(null);
   }
 
-  function updateProfile({ name, email, password, avatarUrl }) {
+  async function updateProfile({ name, email, password, avatarUrl }) {
     if (!user) {
       return {
         success: false,
@@ -169,111 +151,135 @@ export function AuthProvider({ children }) {
       };
     }
 
-    const normalizedEmail = normalizeEmail(email);
-    const emailAlreadyExists = isEmailInUse(normalizedEmail, user.id);
+    try {
+      const usersFromApi = await refreshUsers();
+      const normalizedEmail = normalizeEmail(email);
 
-    if (emailAlreadyExists) {
+      const emailAlreadyExists = usersFromApi.some(
+        existingUser =>
+          existingUser.id !== user.id && normalizeEmail(existingUser.email) === normalizedEmail,
+      );
+
+      if (emailAlreadyExists) {
+        return {
+          success: false,
+          message: 'Este e-mail já está em uso.',
+        };
+      }
+
+      const updatedUser = await usersApi.update(user.id, {
+        name: name.trim(),
+        email: normalizedEmail,
+        password: password?.trim() || user.password,
+        avatarUrl: avatarUrl || user.avatarUrl,
+      });
+
+      await refreshUsers();
+      setUser(updatedUser);
+
+      return {
+        success: true,
+      };
+    } catch {
       return {
         success: false,
-        message: 'Este e-mail já está em uso.',
+        message: 'Falha ao atualizar perfil na API.',
       };
     }
-
-    const updatedUser = {
-      ...user,
-      name: name.trim(),
-      email: normalizedEmail,
-      password: password?.trim() || user.password,
-      avatarUrl: avatarUrl || user.avatarUrl,
-    };
-
-    setUsers(previousUsers =>
-      previousUsers.map(existingUser =>
-        existingUser.id === updatedUser.id ? updatedUser : existingUser,
-      ),
-    );
-    setUser(updatedUser);
-
-    return {
-      success: true,
-    };
   }
 
-  function createUser({ name, email, password, role = DEFAULT_ROLE }) {
-    const normalizedEmail = normalizeEmail(email);
-    const emailAlreadyExists = isEmailInUse(normalizedEmail);
+  async function createUser({ name, email, password, role = DEFAULT_ROLE }) {
+    try {
+      const usersFromApi = await refreshUsers();
+      const normalizedEmail = normalizeEmail(email);
 
-    if (emailAlreadyExists) {
+      const emailAlreadyExists = usersFromApi.some(
+        existingUser => normalizeEmail(existingUser.email) === normalizedEmail,
+      );
+
+      if (emailAlreadyExists) {
+        return {
+          success: false,
+          message: 'Já existe um usuário com este e-mail.',
+          user: null,
+        };
+      }
+
+      const newUser = await usersApi.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        password: password.trim(),
+        avatarUrl: buildAvatarUrl(name),
+        role,
+      });
+
+      await refreshUsers();
+
+      return {
+        success: true,
+        message: 'Usuário criado com sucesso.',
+        user: newUser,
+      };
+    } catch {
       return {
         success: false,
-        message: 'Já existe um usuário com este e-mail.',
+        message: 'Falha ao criar usuário na API.',
         user: null,
       };
     }
-
-    const newUser = {
-      id: createUserId(),
-      name: name.trim(),
-      email: normalizedEmail,
-      password: password.trim(),
-      avatarUrl: buildAvatarUrl(name),
-      role,
-    };
-
-    setUsers(previousUsers => [...previousUsers, newUser]);
-
-    return {
-      success: true,
-      message: 'Usuário criado com sucesso.',
-      user: newUser,
-    };
   }
 
-  function updateUser(userId, { name, email, password, role }) {
-    const currentUser = findUserById(userId);
+  async function updateUser(userId, { name, email, password, role }) {
+    try {
+      const usersFromApi = await refreshUsers();
+      const currentUser = usersFromApi.find(existingUser => existingUser.id === userId);
 
-    if (!currentUser) {
+      if (!currentUser) {
+        return {
+          success: false,
+          message: 'Usuário não encontrado.',
+        };
+      }
+
+      const normalizedEmail = normalizeEmail(email);
+      const emailAlreadyExists = usersFromApi.some(
+        existingUser =>
+          existingUser.id !== userId && normalizeEmail(existingUser.email) === normalizedEmail,
+      );
+
+      if (emailAlreadyExists) {
+        return {
+          success: false,
+          message: 'Este e-mail já está em uso.',
+        };
+      }
+
+      const updatedUser = await usersApi.update(userId, {
+        name: name.trim(),
+        email: normalizedEmail,
+        password: password?.trim() || currentUser.password,
+        role: role || currentUser.role,
+      });
+
+      await refreshUsers();
+
+      if (user?.id === userId) {
+        setUser(updatedUser);
+      }
+
+      return {
+        success: true,
+        message: 'Usuário atualizado com sucesso.',
+      };
+    } catch {
       return {
         success: false,
-        message: 'Usuário não encontrado.',
+        message: 'Falha ao atualizar usuário na API.',
       };
     }
-
-    const normalizedEmail = normalizeEmail(email);
-    const emailAlreadyExists = isEmailInUse(normalizedEmail, userId);
-
-    if (emailAlreadyExists) {
-      return {
-        success: false,
-        message: 'Este e-mail já está em uso.',
-      };
-    }
-
-    const updatedUser = {
-      ...currentUser,
-      name: name.trim(),
-      email: normalizedEmail,
-      password: password?.trim() || currentUser.password,
-      role: role || currentUser.role,
-    };
-
-    setUsers(previousUsers =>
-      previousUsers.map(existingUser =>
-        existingUser.id === userId ? updatedUser : existingUser,
-      ),
-    );
-
-    if (user?.id === userId) {
-      setUser(updatedUser);
-    }
-
-    return {
-      success: true,
-      message: 'Usuário atualizado com sucesso.',
-    };
   }
 
-  function deleteUser(userId) {
+  async function deleteUser(userId) {
     if (user?.id === userId) {
       return {
         success: false,
@@ -281,12 +287,24 @@ export function AuthProvider({ children }) {
       };
     }
 
-    setUsers(previousUsers => previousUsers.filter(u => u.id !== userId));
+    try {
+      await usersApi.remove(userId);
+      const updatedUsers = await refreshUsers();
 
-    return {
-      success: true,
-      message: 'Usuário deletado com sucesso.',
-    };
+      if (user && !updatedUsers.some(existingUser => existingUser.id === user.id)) {
+        setUser(null);
+      }
+
+      return {
+        success: true,
+        message: 'Usuário deletado com sucesso.',
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Falha ao deletar usuário na API.',
+      };
+    }
   }
 
   function isAdmin() {

@@ -29,7 +29,7 @@ export function UserModal({ user, isCreating, onClose }) {
     }
   }, [user, isCreating]);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!name.trim() || !email.trim()) {
@@ -48,7 +48,7 @@ export function UserModal({ user, isCreating, onClose }) {
         return;
       }
 
-      const result = createUser({
+      const result = await createUser({
         name,
         email,
         password,
@@ -68,7 +68,7 @@ export function UserModal({ user, isCreating, onClose }) {
         return;
       }
 
-      const result = updateUser(user.id, {
+      const result = await updateUser(user.id, {
         name,
         email,
         password: password || undefined,

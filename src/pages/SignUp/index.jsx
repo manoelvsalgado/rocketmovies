@@ -13,7 +13,7 @@ export function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!name.trim() || !email.trim() || !password.trim()) {
@@ -21,7 +21,7 @@ export function SignUp() {
       return;
     }
 
-    const result = signUp({ name, email, password });
+    const result = await signUp({ name, email, password });
 
     if (!result.success) {
       window.alert(result.message);
