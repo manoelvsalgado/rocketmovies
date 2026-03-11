@@ -1,12 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { moviesDb } from '../services/supabase';
 import { useAuth } from './AuthContext';
 
 const MoviesContext = createContext({});
-const DEMO_MOVIES_KEY = '@rocketmovies:demo-movies';
+const MOVIES_STORAGE_PREFIX = '@rocketmovies:movies:';
 
-function readDemoMovies() {
-  const storedValue = localStorage.getItem(DEMO_MOVIES_KEY);
+function moviesStorageKey(userId) {
+  return `${MOVIES_STORAGE_PREFIX}${userId}`;
+}
+
+function readStoredMovies(userId) {
+  const storedValue = localStorage.getItem(moviesStorageKey(userId));
 
   if (!storedValue) {
     return [];
@@ -19,13 +22,13 @@ function readDemoMovies() {
   }
 }
 
-function persistDemoMovies(movies) {
-  localStorage.setItem(DEMO_MOVIES_KEY, JSON.stringify(movies));
+function persistMovies(userId, movies) {
+  localStorage.setItem(moviesStorageKey(userId), JSON.stringify(movies));
 }
 
-function buildDemoMovie({ title, description, rating, tags }) {
+function buildMovie({ title, description, rating, tags }) {
   return {
-    id: `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id: `movie-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     title,
     description,
     rating,
@@ -38,26 +41,23 @@ export function MoviesProvider({ children }) {
   const [movies, setMovies] = useState([]);
   const { user } = useAuth();
 
-  const isDemoUser = user?.id === 'demo-user';
-
   const refreshMovies = useCallback(async () => {
-    if (isDemoUser) {
-      const demoMovies = readDemoMovies();
-      setMovies(demoMovies);
-      return demoMovies;
+    if (!user?.id) {
+      setMovies([]);
+      return [];
     }
 
-    const moviesFromDb = await moviesDb.list();
-    setMovies(moviesFromDb);
-    return moviesFromDb;
-  }, [isDemoUser]);
+    const storedMovies = readStoredMovies(user.id);
+    setMovies(storedMovies);
+    return storedMovies;
+  }, [user?.id]);
 
   useEffect(() => {
     async function loadMovies() {
       try {
         await refreshMovies();
       } catch {
-        window.alert('Não foi possível carregar os filmes da API.');
+        window.alert('Não foi possível carregar os filmes locais.');
       }
     }
 
@@ -65,77 +65,57 @@ export function MoviesProvider({ children }) {
   }, [refreshMovies]);
 
   async function createMovie({ title, description, rating, tags }) {
-    if (isDemoUser) {
-      const newMovie = buildDemoMovie({
-        title: title.trim(),
-        description: description.trim(),
-        rating: Number(rating),
-        tags: tags.filter(Boolean),
-      });
-
-      const nextMovies = [newMovie, ...readDemoMovies()];
-      persistDemoMovies(nextMovies);
-      setMovies(nextMovies);
-
-      return newMovie;
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado.');
     }
 
-    const newMovie = await moviesDb.create({
+    const newMovie = buildMovie({
       title: title.trim(),
       description: description.trim(),
       rating: Number(rating),
       tags: tags.filter(Boolean),
     });
 
-    await refreshMovies();
+    const nextMovies = [newMovie, ...readStoredMovies(user.id)];
+    persistMovies(user.id, nextMovies);
+    setMovies(nextMovies);
 
     return newMovie;
   }
 
   async function updateMovie(id, { title, description, rating, tags }) {
-    if (isDemoUser) {
-      const nextMovies = readDemoMovies().map(movie => {
-        if (movie.id !== id) {
-          return movie;
-        }
-
-        return {
-          ...movie,
-          title: title.trim(),
-          description: description.trim(),
-          rating: Number(rating),
-          tags: tags.filter(Boolean),
-        };
-      });
-
-      persistDemoMovies(nextMovies);
-      setMovies(nextMovies);
-
-      return nextMovies.find(movie => movie.id === id);
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado.');
     }
 
-    const updatedMovie = await moviesDb.update(id, {
-      title: title.trim(),
-      description: description.trim(),
-      rating: Number(rating),
-      tags: tags.filter(Boolean),
+    const nextMovies = readStoredMovies(user.id).map(movie => {
+      if (movie.id !== id) {
+        return movie;
+      }
+
+      return {
+        ...movie,
+        title: title.trim(),
+        description: description.trim(),
+        rating: Number(rating),
+        tags: tags.filter(Boolean),
+      };
     });
 
-    await refreshMovies();
+    persistMovies(user.id, nextMovies);
+    setMovies(nextMovies);
 
-    return updatedMovie;
+    return nextMovies.find(movie => movie.id === id);
   }
 
   async function deleteMovie(id) {
-    if (isDemoUser) {
-      const nextMovies = readDemoMovies().filter(movie => movie.id !== id);
-      persistDemoMovies(nextMovies);
-      setMovies(nextMovies);
-      return;
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado.');
     }
 
-    await moviesDb.remove(id);
-    await refreshMovies();
+    const nextMovies = readStoredMovies(user.id).filter(movie => movie.id !== id);
+    persistMovies(user.id, nextMovies);
+    setMovies(nextMovies);
   }
 
   function getMovieById(id) {
