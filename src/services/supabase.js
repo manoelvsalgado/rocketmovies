@@ -119,3 +119,16 @@ export const profilesDb = {
     if (error) sdThrow(error);
   },
 };
+
+export const emailDb = {
+  async sendWelcomeEmail({ name, toEmail }) {
+    const { error } = await supabase.functions.invoke('send-welcome-email', {
+      body: {
+        name,
+        toEmail,
+      },
+    });
+
+    if (error) sdThrow(error);
+  },
+};
