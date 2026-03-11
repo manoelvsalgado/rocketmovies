@@ -3,9 +3,13 @@ import { Link } from 'react-router-dom';
 
 export const Container = styled.header`
   grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 
   height: 105px;
   width: 100%;
+  background-color: ${({ theme }) => theme.COLORS.BACKGROUND_800};
 
   border-bottom-width: 1px;
   border-bottom-style: solid;
@@ -17,11 +21,21 @@ export const Container = styled.header`
 
   padding: 0 24px;
 
-  h1 {
-    color: ${({ theme }) => theme.COLORS.PINK};
-    font-family: 'Roboto Slab';
-    font-weight: 700;
-    font-size: 22px;
+  > .logo {
+    text-decoration: none;
+    flex-shrink: 0;
+
+    h1 {
+      color: ${({ theme }) => theme.COLORS.PINK};
+      font-family: 'Roboto Slab';
+      font-weight: 700;
+      font-size: 22px;
+      transition: filter 0.2s;
+    }
+
+    &:hover h1 {
+      filter: brightness(1.15);
+    }
   }
 
   > .search {
@@ -59,7 +73,7 @@ export const Container = styled.header`
   @media (max-width: 980px) {
     gap: 12px;
 
-    h1 {
+    .logo {
       display: none;
     }
   }

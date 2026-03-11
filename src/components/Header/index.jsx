@@ -3,7 +3,7 @@ import { MdAdminPanelSettings } from 'react-icons/md';
 import { Container, Profile, Logout } from './styles';
 import { Input } from '../../components/Input';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 export function Header({ onSearch, searchValue = '' }) {
@@ -12,12 +12,15 @@ export function Header({ onSearch, searchValue = '' }) {
 
   return (
     <Container>
-      <h1>RocketMovies</h1>
+      <Link to="/" className="logo">
+        <h1>RocketMovies</h1>
+      </Link>
 
       {onSearch ? (
         <div className="search">
           <Input
-            placeholder="Pesquise pelo título"
+            type="search"
+            placeholder="Pesquise pelo título ou marcador"
             value={searchValue}
             onChange={event => onSearch(event.target.value)}
           />

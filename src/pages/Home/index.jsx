@@ -56,8 +56,17 @@ export function Home() {
 
           {!filteredMovies.length && (
             <div className="empty">
-              <strong>Nenhum filme encontrado</strong>
-              <p>Tente buscar por outro título ou marcador.</p>
+              {search.trim() ? (
+                <>
+                  <strong>Nenhum resultado para "{search}"</strong>
+                  <p>Tente buscar por outro título ou marcador.</p>
+                </>
+              ) : (
+                <>
+                  <strong>Sua lista está vazia</strong>
+                  <p>Adicione seu primeiro filme clicando em "Adicionar filme".</p>
+                </>
+              )}
             </div>
           )}
         </Section>

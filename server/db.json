@@ -1,4 +1,22 @@
 {
-  "users": [],
-  "movies": []
+  "users": [
+    {
+      "id": "9d30",
+      "name": "Teste",
+      "email": "teste@teste.com",
+      "password": "123456",
+      "avatarUrl": "https://ui-avatars.com/api/?name=Teste&background=FF859B&color=232129",
+      "role": "user"
+    }
+  ],
+  "movies": [
+    {
+      "id": "36b8",
+      "title": "Busca",
+      "description": "Buscar",
+      "rating": 4,
+      "tags": [],
+      "createdAt": "2026-03-11T14:02:48.095Z"
+    }
+  ]
 }

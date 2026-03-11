@@ -3,15 +3,11 @@ import styled from "styled-components";
 export const Container = styled.div`
   width: 100%;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 
-  display: grid;
-  grid-template-rows: 105px 1fr;
-  grid-template-areas:
-  "header"
-  "content";
-  
   > main {
-    grid-area: content;
+    flex: 1;
     overflow-y: auto;
     padding: 32px 24px 40px;
   }

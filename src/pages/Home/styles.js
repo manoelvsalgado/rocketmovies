@@ -3,14 +3,12 @@ import styled from "styled-components";
 export const Container = styled.div`
   width: 100%;
   min-height: 100vh;
-  display: grid;
-  grid-template-rows: 105px 1fr;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   background-color: ${({ theme }) => theme.COLORS.BACKGROUND_800};
 
   > main {
-    grid-row: 2;
-    grid-column: 1;
+    flex: 1;
     overflow-y: auto;
     padding: 32px 24px 40px;
 
