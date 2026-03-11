@@ -25,7 +25,7 @@ export function SignIn() {
   return (
     <Container>
       <Form onSubmit={handleSubmit} autoComplete="off">
-        <small>Bem-vindo de volta</small>
+        <small>Olá!</small>
         <h1>RocketMovies</h1>
         <p>Aplicação para acompanhar, avaliar e organizar os filmes que você assistiu.</p>
         <h2>Faça seu login</h2>

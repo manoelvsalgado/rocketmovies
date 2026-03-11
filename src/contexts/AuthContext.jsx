@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { usersApi } from '../services/api';
 
 const AuthContext = createContext({});
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
     }
 
     loadUsers();
-  }, []);
+  }, [user]);
 
   async function refreshUsers() {
     const usersFromApi = await usersApi.list();
@@ -311,21 +311,18 @@ export function AuthProvider({ children }) {
     return user?.role === 'admin';
   }
 
-  const value = useMemo(
-    () => ({
-      user,
-      users,
-      signIn,
-      signOut,
-      signUp,
-      updateProfile,
-      createUser,
-      updateUser,
-      deleteUser,
-      isAdmin,
-    }),
-    [user, users],
-  );
+  const value = {
+    user,
+    users,
+    signIn,
+    signOut,
+    signUp,
+    updateProfile,
+    createUser,
+    updateUser,
+    deleteUser,
+    isAdmin,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

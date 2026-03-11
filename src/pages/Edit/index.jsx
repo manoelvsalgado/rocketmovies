@@ -33,7 +33,7 @@ export function Edit() {
     setRating(String(movie.rating));
     setDescription(movie.description);
     setTags(movie.tags);
-  }, [id]);
+  }, [id, getMovieById, navigate]);
 
   function handleAddTag() {
     const normalizedTag = newTag.trim();

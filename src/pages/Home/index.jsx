@@ -58,13 +58,13 @@ export function Home() {
             <div className="empty">
               {search.trim() ? (
                 <>
-                  <strong>Nenhum resultado para "{search}"</strong>
+                  <strong>Nenhum resultado para &quot;{search}&quot;</strong>
                   <p>Tente buscar por outro título ou marcador.</p>
                 </>
               ) : (
                 <>
                   <strong>Sua lista está vazia</strong>
-                  <p>Adicione seu primeiro filme clicando em "Adicionar filme".</p>
+                  <p>Adicione seu primeiro filme clicando em &quot;Adicionar filme&quot;.</p>
                 </>
               )}
             </div>

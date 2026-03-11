@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { moviesApi } from '../services/api';
 
 const MoviesContext = createContext({});
@@ -60,16 +60,13 @@ export function MoviesProvider({ children }) {
     return movies.find(movie => movie.id === id);
   }
 
-  const value = useMemo(
-    () => ({
-      movies,
-      createMovie,
-      updateMovie,
-      deleteMovie,
-      getMovieById,
-    }),
-    [movies],
-  );
+  const value = {
+    movies,
+    createMovie,
+    updateMovie,
+    deleteMovie,
+    getMovieById,
+  };
 
   return <MoviesContext.Provider value={value}>{children}</MoviesContext.Provider>;
 }
