@@ -8,7 +8,7 @@ export function Routes() {
   const { user } = useAuth();
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       {user ? <AppRoutes /> : <AuthRoutes />}
     </BrowserRouter>
   )
