@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { usersApi } from '../services/api';
+import { supabase } from '../services/supabase';
 
 const AuthContext = createContext({});
 
@@ -37,8 +37,25 @@ function buildAvatarUrl(name) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=FF859B&color=232129`;
 }
 
+function mapAuthUser(authUser) {
+  if (!authUser) {
+    return null;
+  }
+
+  const name = authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário';
+  const avatarUrl = authUser.user_metadata?.avatarUrl || buildAvatarUrl(name);
+
+  return {
+    id: authUser.id,
+    name,
+    email: authUser.email,
+    avatarUrl,
+    role: authUser.user_metadata?.role || DEFAULT_ROLE,
+  };
+}
+
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState([]);
+  const [users] = useState([]);
   const [user, setUser] = useState(readStoredUser);
 
   useEffect(() => {
@@ -46,49 +63,43 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   useEffect(() => {
-    async function loadUsers() {
-      try {
-        const usersFromApi = await usersApi.list();
-        setUsers(usersFromApi);
+    async function loadSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        if (user) {
-          const refreshedCurrentUser = usersFromApi.find(existingUser => existingUser.id === user.id);
-          setUser(refreshedCurrentUser || null);
-        }
-      } catch {
-        window.alert('Não foi possível carregar os usuários da API.');
-      }
+      setUser(mapAuthUser(session?.user) || null);
     }
 
-    loadUsers();
-  }, [user]);
+    loadSession();
 
-  async function refreshUsers() {
-    const usersFromApi = await usersApi.list();
-    setUsers(usersFromApi);
-    return usersFromApi;
-  }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(mapAuthUser(session?.user) || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   async function signIn({ email, password }) {
     try {
-      const usersFromApi = await refreshUsers();
       const normalizedEmail = normalizeEmail(email);
-      const normalizedPassword = password.trim();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: password.trim(),
+      });
 
-      const foundUser = usersFromApi.find(
-        existingUser =>
-          normalizeEmail(existingUser.email) === normalizedEmail &&
-          existingUser.password === normalizedPassword,
-      );
-
-      if (!foundUser) {
+      if (error || !data.user) {
         return {
           success: false,
           message: 'E-mail ou senha inválidos.',
         };
       }
 
-      setUser(foundUser);
+      setUser(mapAuthUser(data.user));
 
       return {
         success: true,
@@ -103,30 +114,28 @@ export function AuthProvider({ children }) {
 
   async function signUp({ name, email, password }) {
     try {
-      const usersFromApi = await refreshUsers();
       const normalizedEmail = normalizeEmail(email);
 
-      const emailAlreadyExists = usersFromApi.some(
-        existingUser => normalizeEmail(existingUser.email) === normalizedEmail,
-      );
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: password.trim(),
+        options: {
+          data: {
+            name: name.trim(),
+            avatarUrl: buildAvatarUrl(name),
+            role: DEFAULT_ROLE,
+          },
+        },
+      });
 
-      if (emailAlreadyExists) {
+      if (error) {
         return {
           success: false,
-          message: 'Já existe uma conta com este e-mail.',
+          message: error.message,
         };
       }
 
-      const newUser = await usersApi.create({
-        name: name.trim(),
-        email: normalizedEmail,
-        password: password.trim(),
-        avatarUrl: buildAvatarUrl(name),
-        role: DEFAULT_ROLE,
-      });
-
-      await refreshUsers();
-      setUser(newUser);
+      setUser(mapAuthUser(data.user));
 
       return {
         success: true,
@@ -139,7 +148,8 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function signOut() {
+  async function signOut() {
+    await supabase.auth.signOut();
     setUser(null);
   }
 
@@ -152,30 +162,32 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const usersFromApi = await refreshUsers();
-      const normalizedEmail = normalizeEmail(email);
+      const payload = {
+        data: {
+          name: name.trim(),
+          avatarUrl: avatarUrl?.trim() || user.avatarUrl,
+          role: user.role || DEFAULT_ROLE,
+        },
+      };
 
-      const emailAlreadyExists = usersFromApi.some(
-        existingUser =>
-          existingUser.id !== user.id && normalizeEmail(existingUser.email) === normalizedEmail,
-      );
+      if (email && normalizeEmail(email) !== normalizeEmail(user.email)) {
+        payload.email = normalizeEmail(email);
+      }
 
-      if (emailAlreadyExists) {
+      if (password?.trim()) {
+        payload.password = password.trim();
+      }
+
+      const { data, error } = await supabase.auth.updateUser(payload);
+
+      if (error) {
         return {
           success: false,
-          message: 'Este e-mail já está em uso.',
+          message: error.message,
         };
       }
 
-      const updatedUser = await usersApi.update(user.id, {
-        name: name.trim(),
-        email: normalizedEmail,
-        password: password?.trim() || user.password,
-        avatarUrl: avatarUrl || user.avatarUrl,
-      });
-
-      await refreshUsers();
-      setUser(updatedUser);
+      setUser(mapAuthUser(data.user));
 
       return {
         success: true,
@@ -189,122 +201,31 @@ export function AuthProvider({ children }) {
   }
 
   async function createUser({ name, email, password, role = DEFAULT_ROLE }) {
-    try {
-      const usersFromApi = await refreshUsers();
-      const normalizedEmail = normalizeEmail(email);
-
-      const emailAlreadyExists = usersFromApi.some(
-        existingUser => normalizeEmail(existingUser.email) === normalizedEmail,
-      );
-
-      if (emailAlreadyExists) {
-        return {
-          success: false,
-          message: 'Já existe um usuário com este e-mail.',
-          user: null,
-        };
-      }
-
-      const newUser = await usersApi.create({
-        name: name.trim(),
-        email: normalizedEmail,
-        password: password.trim(),
-        avatarUrl: buildAvatarUrl(name),
-        role,
-      });
-
-      await refreshUsers();
-
-      return {
-        success: true,
-        message: 'Usuário criado com sucesso.',
-        user: newUser,
-      };
-    } catch {
-      return {
-        success: false,
-        message: 'Falha ao criar usuário na API.',
-        user: null,
-      };
-    }
+    return {
+      success: false,
+      message:
+        'Criação de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
+      user: null,
+      details: { name, email, password, role },
+    };
   }
 
   async function updateUser(userId, { name, email, password, role }) {
-    try {
-      const usersFromApi = await refreshUsers();
-      const currentUser = usersFromApi.find(existingUser => existingUser.id === userId);
-
-      if (!currentUser) {
-        return {
-          success: false,
-          message: 'Usuário não encontrado.',
-        };
-      }
-
-      const normalizedEmail = normalizeEmail(email);
-      const emailAlreadyExists = usersFromApi.some(
-        existingUser =>
-          existingUser.id !== userId && normalizeEmail(existingUser.email) === normalizedEmail,
-      );
-
-      if (emailAlreadyExists) {
-        return {
-          success: false,
-          message: 'Este e-mail já está em uso.',
-        };
-      }
-
-      const updatedUser = await usersApi.update(userId, {
-        name: name.trim(),
-        email: normalizedEmail,
-        password: password?.trim() || currentUser.password,
-        role: role || currentUser.role,
-      });
-
-      await refreshUsers();
-
-      if (user?.id === userId) {
-        setUser(updatedUser);
-      }
-
-      return {
-        success: true,
-        message: 'Usuário atualizado com sucesso.',
-      };
-    } catch {
-      return {
-        success: false,
-        message: 'Falha ao atualizar usuário na API.',
-      };
-    }
+    return {
+      success: false,
+      message:
+        'Edição de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
+      details: { userId, name, email, password, role },
+    };
   }
 
   async function deleteUser(userId) {
-    if (user?.id === userId) {
-      return {
-        success: false,
-        message: 'Você não pode deletar sua própria conta aqui. Use as configurações de perfil.',
-      };
-    }
-
-    try {
-      await usersApi.remove(userId);
-      const updatedUsers = await refreshUsers();
-
-      if (user && !updatedUsers.some(existingUser => existingUser.id === user.id)) {
-        setUser(null);
-      }
-
-      return {
-        success: true,
-        message: 'Usuário deletado com sucesso.',
-      };
-    } catch {
-      return {
-        success: false,
-        message: 'Falha ao deletar usuário na API.',
-      };
-    }
+    return {
+      success: false,
+      message:
+        'Exclusão de outros usuários não disponível com Supabase no frontend. Use o painel do Supabase ou uma rota backend com service role key.',
+      details: { userId },
+    };
   }
 
   function isAdmin() {
