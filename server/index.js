@@ -8,7 +8,7 @@ import { dirname, resolve } from 'node:path';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
-const DB_PATH = resolve(process.cwd(), 'server', 'data', 'rocketmovies.sqlite');
+const DB_PATH = process.env.DB_PATH || resolve(process.cwd(), 'server', 'data', 'rocketmovies.sqlite');
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
