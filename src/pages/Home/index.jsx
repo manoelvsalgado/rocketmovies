@@ -31,12 +31,14 @@ export function Home() {
       <Header onSearch={setSearch} searchValue={search} />
 
       <main>
-        <Section title="Meus filmes"> 
-          <Button 
-            icon={<FiPlus/>}
-            title="Adicionar filme"
-            onClick={() => navigate('/new')}
-          />
+        <Section title="Meus filmes">
+          <div className="actions">
+            <Button 
+              icon={<FiPlus/>}
+              title="Adicionar filme"
+              onClick={() => navigate('/new')}
+            />
+          </div>
 
           {filteredMovies.map(movie => (
             <Note
@@ -53,7 +55,10 @@ export function Home() {
           ))}
 
           {!filteredMovies.length && (
-            <p className="empty">Nenhum filme encontrado para esta busca.</p>
+            <div className="empty">
+              <strong>Nenhum filme encontrado</strong>
+              <p>Tente buscar por outro título ou marcador.</p>
+            </div>
           )}
         </Section>
       </main>

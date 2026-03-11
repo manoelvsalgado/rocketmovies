@@ -25,30 +25,31 @@ export function SignIn() {
   return (
     <Container>
       <Form onSubmit={handleSubmit}>
+        <small>Bem-vindo de volta</small>
         <h1>RocketMovies</h1>
         <p>Aplicação para acompanhar, avaliar e organizar os filmes que você assistiu.</p>
         <h2>Faça seu login</h2>
-      <Input 
-        placeholder="E-mail"
-        type="text"
-        icon={FiMail}
-        value={email}
-        onChange={event => setEmail(event.target.value)}
-      />
+        <Input 
+          placeholder="E-mail"
+          type="text"
+          icon={FiMail}
+          value={email}
+          onChange={event => setEmail(event.target.value)}
+        />
 
-      <Input 
-        placeholder="Senha"
-        type="password"
-        icon={FiLock}
-        value={password}
-        onChange={event => setPassword(event.target.value)}
-      />
+        <Input 
+          placeholder="Senha"
+          type="password"
+          icon={FiLock}
+          value={password}
+          onChange={event => setPassword(event.target.value)}
+        />
 
-      <Button title="Entrar" type="submit" />
-      
-      <Link to="/register">
-        Criar Conta
-      </Link>
+        <Button title="Entrar" type="submit" />
+        
+        <Link to="/register">
+          Criar conta
+        </Link>
 
       </Form>
 

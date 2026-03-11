@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { Header } from '../../components/Header';
 import { Input } from '../../components/Input';
 import { Textarea } from '../../components/Textarea';
@@ -77,12 +78,17 @@ export function New() {
     <main>
       <Form onSubmit={handleSubmit}>
         <header>
+          <Link to="/">
+            <FiArrowLeft />
+            Voltar
+          </Link>
           <h1>Novo filme</h1>
-          <Link to="/">voltar</Link> 
         </header>
 
-        <Input placeholder="Título" value={title} onChange={event => setTitle(event.target.value)} />
-        <Input placeholder="Sua nota (0 a 5)" type="number" min="0" max="5" value={rating} onChange={event => setRating(event.target.value)} />
+        <div className="row">
+          <Input placeholder="Título" value={title} onChange={event => setTitle(event.target.value)} />
+          <Input placeholder="Sua nota (0 a 5)" type="number" min="0" max="5" value={rating} onChange={event => setRating(event.target.value)} />
+        </div>
         <Textarea placeholder="Descrição" value={description} onChange={event => setDescription(event.target.value)} />
 
         <Section title="Marcadores">

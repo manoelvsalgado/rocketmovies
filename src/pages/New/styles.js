@@ -2,10 +2,10 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
 
   display: grid;
-  grid-template-rows: 105px auto;
+  grid-template-rows: 105px 1fr;
   grid-template-areas:
   "header"
   "content";
@@ -13,30 +13,67 @@ export const Container = styled.div`
   > main {
     grid-area: content;
     overflow-y: auto;
+    padding: 32px 24px 40px;
   }
 
   .tags {
     display: flex;
-    justify-content: space-between;
+    gap: 10px;
     flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    > main {
+      padding: 24px 16px 32px;
+    }
   }
 
 `;
 
 export const Form = styled.form`
-  max-width: 550px;
-  margin: 38px auto;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px;
+  border-radius: 14px;
+  background: ${({ theme }) => theme.COLORS.BACKGROUND_900};
+  border: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
 
   > header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    gap: 12px;
 
     margin-bottom: 36px;
 
     a {
-      font: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       color: ${({ theme }) => theme.COLORS.GRAY_100};
+      font-size: 15px;
+      width: fit-content;
+    }
+
+    h1 {
+      font-size: clamp(30px, 5vw, 38px);
+      font-weight: 500;
+    }
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 16px;
+
+    > div {
+      margin-bottom: 0;
+    }
+  }
+
+  @media (max-width: 720px) {
+    padding: 20px;
+
+    .row {
+      grid-template-columns: 1fr;
     }
   }
 `;

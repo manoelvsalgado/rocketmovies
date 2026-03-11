@@ -3,42 +3,55 @@ import backgroundImg from "../../assets/background.png";
 
 export const Container = styled.div`
   width: 100%;
-  height: 100vh;
-  display: flex;
-  align-items: stretch;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr minmax(360px, 520px);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const Form = styled.form`
-  flex: 1;
-  padding: 48px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 48px 32px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  text-align: center;
+  align-items: stretch;
+  text-align: left;
   gap: 16px;
-  min-width: 350px;
+
+  > small {
+    color: ${({ theme }) => theme.COLORS.GRAY_100};
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
 
   > h1 {
-    font-size: 48px;
+    font-size: clamp(36px, 6vw, 48px);
+    line-height: 1;
     color: ${({ theme }) => theme.COLORS.PINK};
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
 
   > h2 {
     font-size: 24px;
-    margin-top: 32px;
-    margin-bottom: 24px;
+    margin-top: 12px;
+    margin-bottom: 8px;
   }
 
   > p {
     font-size: 14px;
     color: ${({ theme }) => theme.COLORS.GRAY_100};
-    margin-bottom: 16px;
+    margin-bottom: 4px;
+    line-height: 1.5;
   }
 
   > a {
-    margin-top: 32px;
+    margin-top: 20px;
     color: ${({ theme }) => theme.COLORS.PINK};
     font-weight: 500;
     transition: filter 0.2s;
@@ -50,7 +63,19 @@ export const Form = styled.form`
 `;
 
 export const Background = styled.div`
-  flex:1;
+  position: relative;
   background: url(${backgroundImg}) no-repeat center center;
   background-size: cover;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: ${({ theme }) => theme.COLORS.BACKGROUND_900};
+    opacity: 0.45;
+  }
+
+  @media (max-width: 900px) {
+    display: none;
+  }
 `;

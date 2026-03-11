@@ -5,5 +5,11 @@ export const Container = styled.button`
   color: ${({ theme, isActive }) => isActive ? theme.COLORS.ORANGE : theme.COLORS.GRAY_100};
 
   border: none;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
+
+  @media (max-width: 720px) {
+    text-align: left;
+  }
 `;

@@ -40,10 +40,14 @@ export function Profile() {
       <header>
         <Link to="/" >
         <FiArrowLeft />
+        <span>Voltar</span>
         </Link>
       </header>
 
       <Form onSubmit={handleSubmit}>
+        <h2>Meu perfil</h2>
+        <p>Gerencie seus dados de acesso e personalize sua foto.</p>
+
         <Avatar>
           <img 
           src={user?.avatarUrl}

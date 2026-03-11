@@ -14,13 +14,17 @@ export function Header({ onSearch, searchValue = '' }) {
     <Container>
       <h1>RocketMovies</h1>
 
-      <div className="search">
-        <Input
-          placeholder="Pesquise pelo título"
-          value={searchValue}
-          onChange={event => onSearch?.(event.target.value)}
-        />
-      </div>
+      {onSearch ? (
+        <div className="search">
+          <Input
+            placeholder="Pesquise pelo título"
+            value={searchValue}
+            onChange={event => onSearch(event.target.value)}
+          />
+        </div>
+      ) : (
+        <div className="spacer" />
+      )}
 
       {isAdmin() && (
         <button

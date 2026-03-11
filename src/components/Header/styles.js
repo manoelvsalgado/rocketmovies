@@ -15,18 +15,22 @@ export const Container = styled.header`
   align-items: center;
   gap: 24px;
 
-  padding: 0 80px;
+  padding: 0 24px;
 
   h1 {
     color: ${({ theme }) => theme.COLORS.PINK};
     font-family: 'Roboto Slab';
     font-weight: 700;
-    font-size: 24px;
+    font-size: 22px;
   }
 
   > .search {
     flex: 1;
-    max-width: 630px;
+    max-width: 720px;
+  }
+
+  > .spacer {
+    flex: 1;
   }
 
   .admin-btn {
@@ -39,7 +43,7 @@ export const Container = styled.header`
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 8px;
     transition: all 0.2s;
 
     svg {
@@ -48,7 +52,30 @@ export const Container = styled.header`
     }
 
     &:hover {
-      background-color: rgba(255, 133, 155, 0.1);
+      background-color: ${({ theme }) => theme.COLORS.BACKGROUND_700};
+    }
+  }
+
+  @media (max-width: 980px) {
+    gap: 12px;
+
+    h1 {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    height: 96px;
+    padding: 0 16px;
+    gap: 10px;
+
+    .admin-btn {
+      padding: 6px;
+    }
+
+    > .search {
+      max-width: none;
+      min-width: 0;
     }
   }
 `;
@@ -64,12 +91,12 @@ align-items: center;
  }
 
  > div {
-  width: 198px;
-  height: 68px;
+  width: 180px;
+  height: 64px;
   display: flex;
   flex-direction: column;
   margin-left: 16px;
-  line-height: 24px;
+  line-height: 22px;
 
   strong {
     color: ${({ theme }) => theme.COLORS.WHITE};
@@ -81,6 +108,17 @@ align-items: center;
   span {
     color: ${({ theme }) => theme.COLORS.GRAY_100};
     font-size: 14px;
+  }
+ }
+
+ @media (max-width: 980px) {
+  > div {
+    display: none;
+  }
+
+  > img {
+    width: 52px;
+    height: 52px;
   }
  }
 `;

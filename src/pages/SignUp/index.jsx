@@ -32,6 +32,7 @@ export function SignUp() {
     <Container>
       <Background />
       <Form onSubmit={handleSubmit}>
+        <small>Novo por aqui?</small>
         <h1>RocketMovies</h1>
         <p>Crie sua conta para registrar filmes, avaliações e marcadores favoritos.</p>
         <h2>Crie sua conta</h2>

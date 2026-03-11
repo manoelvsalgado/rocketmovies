@@ -11,14 +11,15 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
 `;
 
 export const Modal = styled.div`
   background-color: ${({ theme }) => theme.COLORS.BACKGROUND_800};
-  border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  border: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
   width: 100%;
-  max-width: 500px;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   max-height: 90vh;
@@ -29,11 +30,11 @@ export const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
+  padding: 22px 24px;
   border-bottom: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
 
   h2 {
-    font-size: 20px;
+    font-size: 22px;
     color: ${({ theme }) => theme.COLORS.WHITE};
     font-weight: 600;
   }
@@ -56,7 +57,7 @@ export const Header = styled.div`
 `;
 
 export const Content = styled.div`
-  padding: 24px;
+  padding: 20px 24px 24px;
   flex: 1;
 
   form {
@@ -79,7 +80,7 @@ export const Content = styled.div`
         padding: 12px 16px;
         background-color: ${({ theme }) => theme.COLORS.BACKGROUND_900};
         color: ${({ theme }) => theme.COLORS.WHITE};
-        border: none;
+        border: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
         border-radius: 10px;
         font-size: 14px;
         cursor: pointer;
@@ -100,7 +101,7 @@ export const Content = styled.div`
 export const Footer = styled.div`
   display: flex;
   gap: 12px;
-  padding: 24px;
+  padding: 20px 24px 24px;
   border-top: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
   margin-top: 16px;
 
@@ -123,5 +124,9 @@ export const Footer = styled.div`
 
   button:last-child {
     flex: 1;
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column-reverse;
   }
 `;

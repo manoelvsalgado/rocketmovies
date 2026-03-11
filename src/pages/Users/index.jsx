@@ -17,8 +17,10 @@ export function Users() {
       <Container>
         <Header />
         <Content>
-          <h1>Acesso Negado</h1>
-          <p>Você não tem permissão para acessar esta página.</p>
+          <div className="blocked">
+            <h1>Acesso negado</h1>
+            <p>Você não tem permissão para acessar esta página.</p>
+          </div>
         </Content>
       </Container>
     );
@@ -57,9 +59,12 @@ export function Users() {
       <Header />
       <Content>
         <div className="header">
-          <h1>Gerenciar Usuários</h1>
+          <div>
+            <h1>Gerenciar usuários</h1>
+            <p>Crie, edite e organize permissões de acesso.</p>
+          </div>
           <Button
-            title="Novo Usuário"
+            title="Novo usuário"
             icon={<FiPlus />}
             onClick={handleCreate}
           />

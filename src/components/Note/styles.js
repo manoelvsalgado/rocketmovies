@@ -4,17 +4,23 @@ export const Container = styled.button`
   width: 100%;
   background-color: ${({ theme }) => theme.COLORS.BACKGROUND_700};
 
-  border: none;
-  border-radius: 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
 
   padding: 22px;
   margin-bottom: 16px;
+  transition: border-color 0.2s, transform 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.COLORS.PINK};
+    transform: translateY(-2px);
+  }
 
   > h1 {
     flex: 1;
     text-align: left;
     font-weight: 700;
-    font-size: 24px;
+    font-size: clamp(20px, 4vw, 24px);
     color: ${({ theme }) => theme.COLORS.WHITE};
   }
 
@@ -33,7 +39,7 @@ export const Container = styled.button`
   > p {
     color: ${({ theme }) => theme.COLORS.GRAY_100};
     text-align: left;
-    line-height: 1.6;
+    line-height: 1.7;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;

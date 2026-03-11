@@ -68,36 +68,38 @@ export function Details() {
 
       <main>
         <Content>
-      <ButtonText title="Excluir filme" onClick={handleDeleteMovie} />
+          <div className="actions">
+            <Button title="Voltar" onClick={() => navigate(-1)} />
+            <ButtonText title="Excluir filme" onClick={handleDeleteMovie} />
+          </div>
 
-      <h1>{movie.title}</h1>
+          <h1>{movie.title}</h1>
 
-      <div className="rating">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <FiStar key={`details-star-${index}`} className={index < movie.rating ? 'filled' : ''} />
-        ))}
-      </div>
+          <div className="rating">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <FiStar key={`details-star-${index}`} className={index < movie.rating ? 'filled' : ''} />
+            ))}
+          </div>
 
-      <div className="meta">
-        <FiClock />
-        <span>{formattedDate}</span>
-      </div>
+          <div className="meta">
+            <FiClock />
+            <span>{formattedDate}</span>
+          </div>
 
-      <p>
-        {movie.description}
-      </p>
+          <p>
+            {movie.description}
+          </p>
 
-      <Section title="Marcadores">
-        <Links>
-          {movie.tags.map(tag => (
-            <li key={tag}>
-              <Tag title={tag} />
-            </li>
-          ))}
-        </Links>
-      </Section>
-      <Button title="Voltar" onClick={() => navigate(-1)} />
-      </Content>
+          <Section title="Marcadores">
+            <Links>
+              {movie.tags.map(tag => (
+                <li key={tag}>
+                  <Tag title={tag} />
+                </li>
+              ))}
+            </Links>
+          </Section>
+        </Content>
       </main>
     </Container>
    );

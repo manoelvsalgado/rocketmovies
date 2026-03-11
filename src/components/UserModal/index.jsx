@@ -89,7 +89,7 @@ export function UserModal({ user, isCreating, onClose }) {
     <Overlay onClick={onClose}>
       <Modal onClick={event => event.stopPropagation()}>
         <Header>
-          <h2>{isCreating ? 'Novo Usuário' : 'Editar Usuário'}</h2>
+          <h2>{isCreating ? 'Novo usuário' : 'Editar usuário'}</h2>
           <button type="button" onClick={onClose} className="close-btn">
             <FiX />
           </button>

@@ -10,12 +10,17 @@ export const Container = styled.button`
   padding: 0 16px;
   margin-top: 16px;
   border-radius: 10px;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 15px;
 
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+
+  &:not(:disabled):hover {
+    filter: brightness(0.92);
+  }
 
   &:disabled {
     opacity: 0.5;

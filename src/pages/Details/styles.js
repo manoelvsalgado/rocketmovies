@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: grid;
   grid-template-rows: 105px 1fr;
   grid-template-columns: 1fr;
@@ -12,7 +12,7 @@ export const Container = styled.div`
     grid-row: 2;
     grid-column: 1;
     overflow-y: auto;
-    padding: 40px 80px;
+    padding: 32px 24px 40px;
   }
 `;
 
@@ -32,20 +32,34 @@ export const Links = styled.ul`
 `;
 
 export const Content = styled.div`
-  max-width: 550px;
+  max-width: 980px;
   margin: 0 auto;
-
   display: flex;
   flex-direction: column;
+  padding: 28px;
+  border-radius: 14px;
+  background: ${({ theme }) => theme.COLORS.BACKGROUND_900};
+  border: 1px solid ${({ theme }) => theme.COLORS.BACKGROUND_700};
 
-  > button:first-child {
-    align-self: end;
+  > .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+
+    > button:first-child {
+      width: fit-content;
+      min-width: 140px;
+      margin-top: 0;
+      padding: 0 20px;
+    }
   }
 
   > h1 {
-    font-size: 36px;
+    font-size: clamp(30px, 5vw, 38px);
     font-weight: 500;
-    padding-top: 64px;
+    line-height: 1.2;
   }
 
   > .rating {
@@ -70,7 +84,22 @@ export const Content = styled.div`
 
   >p {
     font-size: 16px;
-    margin-top: 16px;
+    margin-top: 18px;
     text-align: justify;
+    color: ${({ theme }) => theme.COLORS.GRAY_100};
+    line-height: 1.8;
+  }
+
+  @media (max-width: 720px) {
+    padding: 20px;
+
+    > .actions {
+      flex-direction: column;
+      align-items: stretch;
+
+      > button:first-child {
+        width: 100%;
+      }
+    }
   }
 `;
