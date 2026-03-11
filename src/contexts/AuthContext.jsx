@@ -42,7 +42,14 @@ function readStorage(key, fallback) {
   }
 
   try {
-    return JSON.parse(storedValue);
+    const parsed = JSON.parse(storedValue);
+    
+    // Se for array vazia ou null, retorna fallback
+    if (Array.isArray(parsed) && parsed.length === 0) {
+      return fallback;
+    }
+    
+    return parsed;
   } catch {
     return fallback;
   }
@@ -83,10 +90,12 @@ export function AuthProvider({ children }) {
 
   function signIn({ email, password }) {
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+    
     const foundUser = users.find(
       existingUser =>
         existingUser.email.toLowerCase() === normalizedEmail &&
-        existingUser.password === password,
+        existingUser.password === normalizedPassword,
     );
 
     if (!foundUser) {
