@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
-import { adminUsersApi } from '../services/api';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase, profilesDb } from '../services/supabase';
 
 const AuthContext = createContext({});
 
@@ -59,20 +58,6 @@ export function AuthProvider({ children }) {
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState(readStoredUser);
 
-  const getAccessToken = useCallback(async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    return session?.access_token || null;
-  }, []);
-
-  const refreshUsers = useCallback(async () => {
-    const usersFromApi = await adminUsersApi.list(getAccessToken);
-    setUsers(usersFromApi);
-    return usersFromApi;
-  }, [getAccessToken]);
-
   useEffect(() => {
     persistCurrentUser(user);
   }, [user]);
@@ -100,83 +85,74 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    async function syncAdminUsers() {
+    async function loadProfiles() {
       if (!user || user.role !== 'admin') {
         setUsers([]);
         return;
       }
 
       try {
-        await refreshUsers();
+        const profiles = await profilesDb.list();
+        setUsers(profiles);
       } catch {
-        window.alert('Não foi possível carregar os usuários da API admin.');
+        window.alert('Não foi possível carregar os usuários.');
       }
     }
 
-    syncAdminUsers();
-  }, [user, refreshUsers]);
+    loadProfiles();
+  }, [user]);
 
   async function signIn({ email, password }) {
     try {
-      const normalizedEmail = normalizeEmail(email);
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+        email: normalizeEmail(email),
         password: password.trim(),
       });
 
       if (error || !data.user) {
-        return {
-          success: false,
-          message: 'E-mail ou senha inválidos.',
-        };
+        return { success: false, message: 'E-mail ou senha inválidos.' };
       }
 
       setUser(mapAuthUser(data.user));
-
-      return {
-        success: true,
-      };
+      return { success: true };
     } catch {
-      return {
-        success: false,
-        message: 'Falha ao acessar a API de autenticação.',
-      };
+      return { success: false, message: 'Falha ao acessar a autenticação.' };
     }
   }
 
   async function signUp({ name, email, password }) {
     try {
-      const normalizedEmail = normalizeEmail(email);
-
+      const trimmedName = name.trim();
       const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
+        email: normalizeEmail(email),
         password: password.trim(),
         options: {
           data: {
-            name: name.trim(),
-            avatarUrl: buildAvatarUrl(name),
+            name: trimmedName,
+            avatarUrl: buildAvatarUrl(trimmedName),
             role: DEFAULT_ROLE,
           },
         },
       });
 
       if (error) {
-        return {
-          success: false,
-          message: error.message,
-        };
+        return { success: false, message: error.message };
+      }
+
+      if (data.user) {
+        await profilesDb.upsert({
+          id: data.user.id,
+          name: trimmedName,
+          email: normalizeEmail(email),
+          avatarUrl: buildAvatarUrl(trimmedName),
+          role: DEFAULT_ROLE,
+        });
       }
 
       setUser(mapAuthUser(data.user));
-
-      return {
-        success: true,
-      };
+      return { success: true };
     } catch {
-      return {
-        success: false,
-        message: 'Falha ao criar conta na API.',
-      };
+      return { success: false, message: 'Falha ao criar conta.' };
     }
   }
 
@@ -187,17 +163,17 @@ export function AuthProvider({ children }) {
 
   async function updateProfile({ name, email, password, avatarUrl }) {
     if (!user) {
-      return {
-        success: false,
-        message: 'Nenhum usuário autenticado.',
-      };
+      return { success: false, message: 'Nenhum usuário autenticado.' };
     }
 
     try {
+      const trimmedName = name.trim();
+      const nextAvatarUrl = avatarUrl?.trim() || user.avatarUrl;
+
       const payload = {
         data: {
-          name: name.trim(),
-          avatarUrl: avatarUrl?.trim() || user.avatarUrl,
+          name: trimmedName,
+          avatarUrl: nextAvatarUrl,
           role: user.role || DEFAULT_ROLE,
         },
       };
@@ -213,109 +189,23 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.updateUser(payload);
 
       if (error) {
-        return {
-          success: false,
-          message: error.message,
-        };
+        return { success: false, message: error.message };
       }
 
-      setUser(mapAuthUser(data.user));
+      const updatedUser = mapAuthUser(data.user);
+      setUser(updatedUser);
 
-      return {
-        success: true,
-      };
+      await profilesDb.upsert({
+        id: updatedUser.id,
+        name: trimmedName,
+        email: updatedUser.email,
+        avatarUrl: nextAvatarUrl,
+        role: updatedUser.role,
+      });
+
+      return { success: true };
     } catch {
-      return {
-        success: false,
-        message: 'Falha ao atualizar perfil na API.',
-      };
-    }
-  }
-
-  async function createUser({ name, email, password, role = DEFAULT_ROLE }) {
-    try {
-      const newUser = await adminUsersApi.create(
-        {
-          name: name.trim(),
-          email: normalizeEmail(email),
-          password: password.trim(),
-          role,
-          avatarUrl: buildAvatarUrl(name),
-        },
-        getAccessToken,
-      );
-
-      await refreshUsers();
-
-      return {
-        success: true,
-        message: 'Usuário criado com sucesso.',
-        user: newUser,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'Falha ao criar usuário na API admin.',
-        user: null,
-      };
-    }
-  }
-
-  async function updateUser(userId, { name, email, password, role }) {
-    try {
-      await adminUsersApi.update(
-        userId,
-        {
-          name: name.trim(),
-          email: normalizeEmail(email),
-          password: password?.trim() || undefined,
-          role,
-        },
-        getAccessToken,
-      );
-
-      await refreshUsers();
-
-      if (user?.id === userId) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setUser(mapAuthUser(session?.user));
-      }
-
-      return {
-        success: true,
-        message: 'Usuário atualizado com sucesso.',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'Falha ao atualizar usuário na API admin.',
-      };
-    }
-  }
-
-  async function deleteUser(userId) {
-    if (user?.id === userId) {
-      return {
-        success: false,
-        message: 'Você não pode deletar sua própria conta aqui. Use as configurações de perfil.',
-      };
-    }
-
-    try {
-      await adminUsersApi.remove(userId, getAccessToken);
-      await refreshUsers();
-
-      return {
-        success: true,
-        message: 'Usuário deletado com sucesso.',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'Falha ao deletar usuário na API admin.',
-      };
+      return { success: false, message: 'Falha ao atualizar perfil.' };
     }
   }
 
@@ -330,9 +220,6 @@ export function AuthProvider({ children }) {
     signOut,
     signUp,
     updateProfile,
-    createUser,
-    updateUser,
-    deleteUser,
     isAdmin,
   };
 

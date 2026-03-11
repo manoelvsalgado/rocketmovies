@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { moviesApi } from '../services/api';
+import { moviesDb } from '../services/supabase';
 
 const MoviesContext = createContext({});
 
@@ -7,9 +7,9 @@ export function MoviesProvider({ children }) {
   const [movies, setMovies] = useState([]);
 
   async function refreshMovies() {
-    const moviesFromApi = await moviesApi.list();
-    setMovies(moviesFromApi);
-    return moviesFromApi;
+    const moviesFromDb = await moviesDb.list();
+    setMovies(moviesFromDb);
+    return moviesFromDb;
   }
 
   useEffect(() => {
@@ -25,12 +25,11 @@ export function MoviesProvider({ children }) {
   }, []);
 
   async function createMovie({ title, description, rating, tags }) {
-    const newMovie = await moviesApi.create({
+    const newMovie = await moviesDb.create({
       title: title.trim(),
       description: description.trim(),
       rating: Number(rating),
       tags: tags.filter(Boolean),
-      createdAt: new Date().toISOString(),
     });
 
     await refreshMovies();
@@ -39,7 +38,7 @@ export function MoviesProvider({ children }) {
   }
 
   async function updateMovie(id, { title, description, rating, tags }) {
-    const updatedMovie = await moviesApi.update(id, {
+    const updatedMovie = await moviesDb.update(id, {
       title: title.trim(),
       description: description.trim(),
       rating: Number(rating),
@@ -52,7 +51,7 @@ export function MoviesProvider({ children }) {
   }
 
   async function deleteMovie(id) {
-    await moviesApi.remove(id);
+    await moviesDb.remove(id);
     await refreshMovies();
   }
 
